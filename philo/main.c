@@ -60,11 +60,11 @@ void    free_data(t_data *data)
     while (i < data->nb_philos)
     {
         pthread_mutex_destroy(&data->forks[i]);
+        pthread_mutex_destroy(&data->philos[i].meal_mutex);
         i++;
     }
     pthread_mutex_destroy(&data->print_mutex);
     pthread_mutex_destroy(&data->death_mutex);
-    pthread_mutex_destroy(&data->philos->meal_mutex);
     if (data->forks)
         free(data->forks);
     if (data->philos)
@@ -81,26 +81,21 @@ void    one_philo_case(t_data *data)
     free_data(data);
 }
 
-int	main(int argc, char **argv)
+static int create_monitor_thread(t_data *data, pthread_t *monitor)
 {
-    t_data *data;
-    pthread_t monitor;
-    int     i;
-    
-    i = 0;
-    data = NULL;
-    if (argc < 5 || argc > 6 || !check_args(argv))
-        return (write(STDERR_FILENO, "Error invalid\n", 14), 1);
-    if (!(data = init(data, argc, argv)))
-        return (1);
-    if (data->nb_philos == 1)
-        return (one_philo_case(data), 0);
-    if (create_philo_threads(data))
+    if (pthread_create(monitor, NULL, monitor_routine, data) != 0)
     {
-        return (free_data(data), 1);
+        printf("error invalid pthread_create");
+        free_data(data);
+        return (1);
     }
-	if (pthread_create(&monitor, NULL, monitor_routine, data) != 0)
-        printf("error invalid pthread_create");  
+    return (0);
+}
+
+static void wait_all_threads(t_data *data, pthread_t monitor)
+{
+    int i;
+
     i = 0;
     while (i < data->nb_philos)
     {
@@ -108,6 +103,33 @@ int	main(int argc, char **argv)
         i++;
     }
     pthread_join(monitor, NULL);
+}
+
+static int validate_and_init(int argc, char **argv, t_data **data)
+{
+    if (argc < 5 || argc > 6 || !check_args(argv))
+        return (write(STDERR_FILENO, "Error invalid\n", 14), 1);
+    *data = init(*data, argc, argv);
+    if (!*data)
+        return (1);
+    return (0);
+}
+
+int	main(int argc, char **argv)
+{
+    t_data *data;
+    pthread_t monitor;
+    
+    data = NULL;
+    if (validate_and_init(argc, argv, &data))
+        return (1);
+    if (data->nb_philos == 1)
+        return (one_philo_case(data), 0);
+    if (create_philo_threads(data))
+        return (free_data(data), 1);
+    if (create_monitor_thread(data, &monitor))
+        return (1);
+    wait_all_threads(data, monitor);
     free_data(data);
     return (0);
 }

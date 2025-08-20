@@ -12,26 +12,11 @@
 
 #include "philo.h"
 
-/* void print_action(t_philo *philo, const char *msg)
-{
-    t_data *data = philo->data;
-    long   ts;
-
-    pthread_mutex_lock(&data->death_mutex);
-    if (!data->someone_died)
-    {
-        pthread_mutex_lock(&data->print_mutex);
-        ts = get_current_time() - data->start_time;
-        printf("%ld %d %s\n", ts, philo->id, msg);
-        pthread_mutex_unlock(&data->print_mutex);
-    }
-    pthread_mutex_unlock(&data->death_mutex);
-} */
-
 void print_action_ts(t_philo *philo, long ts, const char *msg)
 {
-    t_data *data = philo->data;
+    t_data *data;
 
+    data = philo->data;
     pthread_mutex_lock(&data->death_mutex);
     if (!data->someone_died)
     {
@@ -41,98 +26,110 @@ void print_action_ts(t_philo *philo, long ts, const char *msg)
     }
     pthread_mutex_unlock(&data->death_mutex);
 }
-
-/* void philo_think(t_philo *philo)
-{
-    print_action(philo, "is thinking");
-} */
 
 void philo_think(t_philo *philo)
 {
-    t_data *data = philo->data;
-    long    ts   = get_current_time() - data->start_time;
+    t_data *data;
+    long    ts;
 
+    data = philo->data;
+    ts = get_current_time() - data->start_time;
     print_action_ts(philo, ts, "is thinking");
 }
 
-/* void philo_eat(t_philo *philo)
+static void update_meal_info(t_philo *philo)
 {
-    print_action(philo, "is eating");
-    pthread_mutex_lock(&philo->meal_mutex);
-    philo->last_meal  = get_current_time();
-    philo->meals_eaten++;
-    pthread_mutex_unlock(&philo->meal_mutex);
-    usleep(philo->data->time_to_eat * 1000);
-} */
-
-void philo_eat(t_philo *philo)
-{
-    t_data *data = philo->data;
+    t_data *data;
     long    now;
 
-    // 1) On marque le début du repas tout de suite
+    data = philo->data;
     pthread_mutex_lock(&philo->meal_mutex);
     philo->last_meal = get_current_time();
     philo->meals_eaten++;
     now = philo->last_meal - data->start_time;
     pthread_mutex_unlock(&philo->meal_mutex);
-
-    // 2) On affiche avec ce timestamp unique
     print_action_ts(philo, now, "is eating");
-    usleep(data->time_to_eat * 1000);
 }
 
-/* void philo_sleep(t_philo *philo)
+static void adaptive_usleep(long remaining)
 {
-    print_action(philo, "is sleeping");
-    usleep(philo->data->time_to_sleep * 1000);
-} */
+    if (remaining > 1000)
+        usleep(1000);
+    else if (remaining > 100)
+        usleep(remaining / 2);
+    else
+        usleep(50);
+}
+
+static int check_death_during_sleep(t_philo *philo)
+{
+    t_data *data;
+
+    data = philo->data;
+    pthread_mutex_lock(&data->death_mutex);
+    if (data->someone_died)
+    {
+        pthread_mutex_unlock(&data->death_mutex);
+        return (1);
+    }
+    pthread_mutex_unlock(&data->death_mutex);
+    return (0);
+}
+
+static void precise_sleep(t_philo *philo, long duration)
+{
+    long    start_time;
+    long    elapsed;
+    long    remaining;
+
+    start_time = get_current_time();
+    while (1)
+    {
+        if (check_death_during_sleep(philo))
+            return;
+        elapsed = get_current_time() - start_time;
+        if (elapsed >= duration)
+            break;
+        remaining = duration - elapsed;
+        adaptive_usleep(remaining);
+    }
+}
+
+void philo_eat(t_philo *philo)
+{
+    update_meal_info(philo);
+    precise_sleep(philo, philo->data->time_to_eat);
+}
 
 void philo_sleep(t_philo *philo)
 {
-    t_data *data = philo->data;
-    long    ts   = get_current_time() - data->start_time;
+    t_data *data;
+    long    ts;
 
+    data = philo->data;
+    ts = get_current_time() - data->start_time;
     print_action_ts(philo, ts, "is sleeping");
-    usleep(data->time_to_sleep * 1000);
+    precise_sleep(philo, data->time_to_sleep);
 }
-
-/* void take_forks(t_philo *philo)
-{
-    if (philo->id % 2 == 0)
-    {
-        pthread_mutex_lock(philo->right_fork);
-        print_action(philo, "has taken a fork");
-        pthread_mutex_lock(philo->left_fork);
-        print_action(philo, "has taken a fork");
-    }
-    else
-    {
-        pthread_mutex_lock(philo->left_fork);
-        print_action(philo, "has taken a fork");
-        pthread_mutex_lock(philo->right_fork);
-        print_action(philo, "has taken a fork");
-    }
-} */
 
 void take_forks(t_philo *philo)
 {
-    t_data *data = philo->data;
-    long    ts = get_current_time() - data->start_time;
+    t_data *data;
 
+    data = philo->data;
     if (philo->id % 2 == 0)
     {
         pthread_mutex_lock(philo->right_fork);
-        print_action_ts(philo, ts, "has taken a fork");
+        print_action_ts(philo, get_current_time() - data->start_time, "has taken a fork");
         pthread_mutex_lock(philo->left_fork);
-        print_action_ts(philo, ts, "has taken a fork");
+        print_action_ts(philo, get_current_time() - data->start_time, "has taken a fork");
     }
     else
     {
         pthread_mutex_lock(philo->left_fork);
-        print_action_ts(philo, ts, "has taken a fork");
+        print_action_ts(philo, get_current_time() - data->start_time, "has taken a fork");
         pthread_mutex_lock(philo->right_fork);
-        print_action_ts(philo, ts, "has taken a fork");
+        print_action_ts(philo, get_current_time() - data->start_time, "has taken a fork");
     }
 }
 
@@ -150,38 +147,57 @@ void drop_forks(t_philo *philo)
     }
 }
 
+static void initial_delay(t_philo *philo)
+{
+    t_data *data;
+
+    data = philo->data;
+    if (data->nb_philos == 2 && philo->id % 2 == 0)
+        usleep(data->time_to_eat * 500);
+    else if (philo->id % 2 == 0)
+        usleep(1000);
+}
+
+static int check_death_and_meals(t_philo *philo)
+{
+    t_data *data;
+
+    data = philo->data;
+    pthread_mutex_lock(&data->death_mutex);
+    if (data->someone_died)
+    {
+        pthread_mutex_unlock(&data->death_mutex);
+        return (1);
+    }
+    pthread_mutex_unlock(&data->death_mutex);
+    if (data->max_meals > 0)
+    {
+        pthread_mutex_lock(&philo->meal_mutex);
+        if (philo->meals_eaten >= data->max_meals)
+        {
+            pthread_mutex_unlock(&philo->meal_mutex);
+            return (1);
+        }
+        pthread_mutex_unlock(&philo->meal_mutex);
+    }
+    return (0);
+}
+
 void *routine(void *arg)
 {
-    t_philo *philo = (t_philo *)arg;
-    t_data  *data  = philo->data;
+    t_philo *philo;
 
-    if (philo->id % 2 == 0)
-        usleep(1000);
+    philo = (t_philo *)arg;
+    initial_delay(philo);
     while (1)
     {
-        pthread_mutex_lock(&data->death_mutex);
-        if (data->someone_died)
-        {
-            pthread_mutex_unlock(&data->death_mutex);
+        if (check_death_and_meals(philo))
             break;
-        }
-        pthread_mutex_unlock(&data->death_mutex);
         philo_think(philo);
         take_forks(philo);
         philo_eat(philo);
         drop_forks(philo);
         philo_sleep(philo);
-    
-		if (data->max_meals > 0)
-    	{
-			pthread_mutex_lock(&philo->meal_mutex);
-        	if (philo->meals_eaten >= data->max_meals)
-        	{
-            	pthread_mutex_unlock(&philo->meal_mutex);
-            	break;
-        	}
-        	pthread_mutex_unlock(&philo->meal_mutex);
-		}
     }
     return (NULL);
 }
