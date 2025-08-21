@@ -6,7 +6,7 @@
 /*   By: radubos <radubos@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/04/24 18:07:53 by radubos           #+#    #+#             */
-/*   Updated: 2025/08/21 17:18:28 by radubos          ###   ########.fr       */
+/*   Updated: 2025/08/21 17:34:06 by radubos          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -51,20 +51,11 @@ struct s_data
 
 // check.c
 int			validate_and_init(int argc, char **argv, t_data **data);
-static int	check_args(char **argv);
-static int	check_number(char *str);
 
 // init_data.c
-static int	validate_params(char **argv);
-static void	set_data_values(t_data *data, int argc, char **argv);
-static int	init_mutexes(t_data *data);
 int			init_data(t_data *data, int argc, char **argv);
 
 // init_philo.c
-static int	allocate_resources(t_data *data);
-static int	init_forks(t_data *data);
-static void	set_philo_values(t_data *data, int i);
-static int	init_philo_mutexes(t_data *data);
 int			init_philos(t_data *data);
 
 // init.c
@@ -72,14 +63,10 @@ int			create_philo_threads(t_data *data);
 t_data		*init(t_data *data, int argc, char **argv);
 
 // main.c
-static int	create_monitor_thread(t_data *data, pthread_t *monitor);
-static void	wait_all_threads(t_data *data, pthread_t monitor);
 void		one_philo_case(t_data *data);
 void		free_data(t_data *data);
 
 // monitor.c
-static int	check_philo_death(t_data *data, int i);
-static int	check_all_philos(t_data *data);
 void		*monitor_routine(void *arg);
 
 // routine_actions.c
@@ -90,15 +77,13 @@ void		take_forks(t_philo *philo);
 void		drop_forks(t_philo *philo);
 
 // routine_time.c
+void		precise_sleep(t_philo *philo, long duration);
 void		initial_delay(t_philo *philo);
-static void	adaptive_usleep(long remaining);
-static void	precise_sleep(t_philo *philo, long duration);
 
 // routine.c
 void		print_action_ts(t_philo *philo, long ts, const char *msg);
 void		update_meal_info(t_philo *philo);
 int			check_death_during_sleep(t_philo *philo);
-static int	check_death_and_meals(t_philo *philo);
 void		*routine(void *arg);
 
 // utils.c

@@ -6,7 +6,7 @@
 /*   By: radubos <radubos@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/08/21 15:33:47 by radubos           #+#    #+#             */
-/*   Updated: 2025/08/21 16:23:03 by radubos          ###   ########.fr       */
+/*   Updated: 2025/08/21 17:33:40 by radubos          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -22,7 +22,7 @@ static void	adaptive_usleep(long remaining)
 		usleep(50);
 }
 
-static void	precise_sleep(t_philo *philo, long duration)
+void	precise_sleep(t_philo *philo, long duration)
 {
 	long	start_time;
 	long	elapsed;
