@@ -6,7 +6,7 @@
 #    By: radubos <radubos@student.42.fr>            +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2025/04/24 18:05:45 by radubos           #+#    #+#              #
-#    Updated: 2025/05/02 18:13:07 by radubos          ###   ########.fr        #
+#    Updated: 2025/08/21 16:05:25 by radubos          ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -18,7 +18,7 @@ CC = cc
 CFLAGS = -Wall -Wextra -Werror -g3 -pthread -fsanitize=address
 
 # Source files and object files
-SRC = main.c init.c utils.c monitor.c routine.c
+SRC = main.c init.c utils.c monitor.c routine.c routine_actions.c check.c
 OBJ = $(SRC:.c=.o)
 
 # Default rule

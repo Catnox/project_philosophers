@@ -6,130 +6,82 @@
 /*   By: radubos <radubos@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/04/24 18:08:42 by radubos           #+#    #+#             */
-/*   Updated: 2025/06/23 01:42:16 by radubos          ###   ########.fr       */
+/*   Updated: 2025/08/21 16:06:41 by radubos          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "philo.h"
 
-static int check_number(char *str)
+void	free_data(t_data *data)
 {
-    int i;
+	int	i;
 
-    i = 0;
-    while (str[i])
-    {
-        if (str[i] < '0' || str[i] > '9')
-            return (0);
-        i++;
-    }
-    i = 0;
-	while (str[i] == '0')
+	if (!data)
+		return ;
+	i = 0;
+	while (i < data->nb_philos)
+	{
+		pthread_mutex_destroy(&data->forks[i]);
+		pthread_mutex_destroy(&data->philos[i].meal_mutex);
 		i++;
-	if (!str[i])
-		return (0);
-	if (ft_strlen(str + i) < 10)
+	}
+	pthread_mutex_destroy(&data->print_mutex);
+	pthread_mutex_destroy(&data->death_mutex);
+	if (data->forks)
+		free(data->forks);
+	if (data->philos)
+		free(data->philos);
+	if (data)
+		free(data);
+}
+
+void	one_philo_case(t_data *data)
+{
+	printf("0 1 has taken a fork\n");
+	usleep(data->time_to_die * 1000);
+	printf("%d 1 died\n", data->time_to_die);
+	free_data(data);
+}
+
+static int	create_monitor_thread(t_data *data, pthread_t *monitor)
+{
+	if (pthread_create(monitor, NULL, monitor_routine, data) != 0)
+	{
+		printf("error invalid pthread_create");
+		free_data(data);
 		return (1);
-	else if (ft_strlen(str + i) > 10)
-		return (0);
-	else
-		return (ft_strcmp(str + i, "2147483647") <= 0);
+	}
+	return (0);
 }
 
-static int check_args(char **argv)
+static void	wait_all_threads(t_data *data, pthread_t monitor)
 {
-    int i;
+	int	i;
 
-    i = 1;
-    while (argv[i])
-    {
-        if (!check_number(argv[i]))
-            return (0);
-        i++;
-    }
-    return (1);
-}
-
-void    free_data(t_data *data)
-{
-    int i;
-
-    if (!data)
-        return;
-    i = 0;
-    while (i < data->nb_philos)
-    {
-        pthread_mutex_destroy(&data->forks[i]);
-        pthread_mutex_destroy(&data->philos[i].meal_mutex);
-        i++;
-    }
-    pthread_mutex_destroy(&data->print_mutex);
-    pthread_mutex_destroy(&data->death_mutex);
-    if (data->forks)
-        free(data->forks);
-    if (data->philos)
-        free(data->philos);
-    if (data)
-        free(data);
-}
-
-void    one_philo_case(t_data *data)
-{
-    printf("0 1 has taken a fork\n");
-    usleep(data->time_to_die * 1000);
-    printf("%d 1 died\n", data->time_to_die);
-    free_data(data);
-}
-
-static int create_monitor_thread(t_data *data, pthread_t *monitor)
-{
-    if (pthread_create(monitor, NULL, monitor_routine, data) != 0)
-    {
-        printf("error invalid pthread_create");
-        free_data(data);
-        return (1);
-    }
-    return (0);
-}
-
-static void wait_all_threads(t_data *data, pthread_t monitor)
-{
-    int i;
-
-    i = 0;
-    while (i < data->nb_philos)
-    {
-        pthread_join(data->philos[i].thread, NULL);
-        i++;
-    }
-    pthread_join(monitor, NULL);
-}
-
-static int validate_and_init(int argc, char **argv, t_data **data)
-{
-    if (argc < 5 || argc > 6 || !check_args(argv))
-        return (write(STDERR_FILENO, "Error invalid\n", 14), 1);
-    *data = init(*data, argc, argv);
-    if (!*data)
-        return (1);
-    return (0);
+	i = 0;
+	while (i < data->nb_philos)
+	{
+		pthread_join(data->philos[i].thread, NULL);
+		i++;
+	}
+	pthread_join(monitor, NULL);
 }
 
 int	main(int argc, char **argv)
 {
-    t_data *data;
-    pthread_t monitor;
-    
-    data = NULL;
-    if (validate_and_init(argc, argv, &data))
-        return (1);
-    if (data->nb_philos == 1)
-        return (one_philo_case(data), 0);
-    if (create_philo_threads(data))
-        return (free_data(data), 1);
-    if (create_monitor_thread(data, &monitor))
-        return (1);
-    wait_all_threads(data, monitor);
-    free_data(data);
-    return (0);
+	t_data		*data;
+	pthread_t	monitor;
+
+	data = NULL;
+	if (validate_and_init(argc, argv, &data))
+		return (1);
+	if (data->nb_philos == 1)
+		return (one_philo_case(data), 0);
+	if (create_philo_threads(data))
+		return (free_data(data), 1);
+	if (create_monitor_thread(data, &monitor))
+		return (1);
+	wait_all_threads(data, monitor);
+	free_data(data);
+	return (0);
 }
