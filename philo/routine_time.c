@@ -6,21 +6,11 @@
 /*   By: radubos <radubos@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/08/21 15:33:47 by radubos           #+#    #+#             */
-/*   Updated: 2025/08/21 17:33:40 by radubos          ###   ########.fr       */
+/*   Updated: 2025/08/22 19:25:52 by radubos          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "philo.h"
-
-static void	adaptive_usleep(long remaining)
-{
-	if (remaining > 1000)
-		usleep(1000);
-	else if (remaining > 100)
-		usleep(remaining / 2);
-	else
-		usleep(50);
-}
 
 void	precise_sleep(t_philo *philo, long duration)
 {
@@ -37,7 +27,12 @@ void	precise_sleep(t_philo *philo, long duration)
 		if (elapsed >= duration)
 			break ;
 		remaining = duration - elapsed;
-		adaptive_usleep(remaining);
+		if (remaining > 200)
+			usleep(100);
+		else if (remaining > 20)
+			usleep(10);
+		else
+			usleep(1);
 	}
 }
 
@@ -46,8 +41,6 @@ void	initial_delay(t_philo *philo)
 	t_data	*data;
 
 	data = philo->data;
-	if (data->nb_philos == 2 && philo->id % 2 == 0)
-		usleep(data->time_to_eat * 500);
-	else if (philo->id % 2 == 0)
-		usleep(1000);
+	if (data->nb_philos > 1 && philo->id % 2 == 0)
+		ft_usleep(data->time_to_eat / 2);
 }

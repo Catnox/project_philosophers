@@ -6,7 +6,7 @@
 /*   By: radubos <radubos@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/04/24 18:07:53 by radubos           #+#    #+#             */
-/*   Updated: 2025/08/21 17:34:06 by radubos          ###   ########.fr       */
+/*   Updated: 2025/08/22 19:40:16 by radubos          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -81,7 +81,7 @@ void		precise_sleep(t_philo *philo, long duration);
 void		initial_delay(t_philo *philo);
 
 // routine.c
-void		print_action_ts(t_philo *philo, long ts, const char *msg);
+void		print_action_ts(t_philo *philo, const char *msg);
 void		update_meal_info(t_philo *philo);
 int			check_death_during_sleep(t_philo *philo);
 void		*routine(void *arg);
@@ -91,5 +91,6 @@ int			ft_atoi(const char *nptr);
 long		get_current_time(void);
 size_t		ft_strlen(const char *s);
 int			ft_strcmp(const char *s1, const char *s2);
+void		ft_usleep(long time);
 
 #endif

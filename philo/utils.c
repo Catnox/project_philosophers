@@ -6,7 +6,7 @@
 /*   By: radubos <radubos@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/04/26 09:01:30 by radubos           #+#    #+#             */
-/*   Updated: 2025/08/21 13:25:37 by radubos          ###   ########.fr       */
+/*   Updated: 2025/08/22 19:24:51 by radubos          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -67,4 +67,26 @@ int	ft_strcmp(const char *s1, const char *s2)
 		s2++;
 	}
 	return (*s1 - *s2);
+}
+
+void	ft_usleep(long time)
+{
+	long	start;
+	long	now;
+	long	remaining;
+
+	start = get_current_time();
+	while (1)
+	{
+		now = get_current_time();
+		remaining = time - (now - start);
+		if (remaining <= 0)
+			break ;
+		if (remaining > 200)
+			usleep(100);
+		else if (remaining > 20)
+			usleep(10);
+		else
+			usleep(1);
+	}
 }

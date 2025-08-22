@@ -6,7 +6,7 @@
 /*   By: radubos <radubos@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/04/26 12:40:01 by radubos           #+#    #+#             */
-/*   Updated: 2025/08/21 13:17:10 by radubos          ###   ########.fr       */
+/*   Updated: 2025/08/22 19:47:44 by radubos          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -30,6 +30,35 @@ static int	check_philo_death(t_data *data, int i)
 				data->philos[i].id);
 			pthread_mutex_unlock(&data->print_mutex);
 		}
+		pthread_mutex_unlock(&data->death_mutex);
+		return (1);
+	}
+	return (0);
+}
+
+static int	check_all_meals_eaten(t_data *data)
+{
+	int	i;
+	int	all_finished;
+
+	if (data->max_meals <= 0)
+		return (0);
+	all_finished = 1;
+	i = 0;
+	while (i < data->nb_philos)
+	{
+		pthread_mutex_lock(&data->philos[i].meal_mutex);
+		if (data->philos[i].meals_eaten < data->max_meals)
+			all_finished = 0;
+		pthread_mutex_unlock(&data->philos[i].meal_mutex);
+		if (!all_finished)
+			break ;
+		i++;
+	}
+	if (all_finished)
+	{
+		pthread_mutex_lock(&data->death_mutex);
+		data->someone_died = 1;
 		pthread_mutex_unlock(&data->death_mutex);
 		return (1);
 	}
@@ -64,6 +93,8 @@ void	*monitor_routine(void *arg)
 			break ;
 		}
 		pthread_mutex_unlock(&data->death_mutex);
+		if (check_all_meals_eaten(data))
+			return (NULL);
 		if (check_all_philos(data))
 			return (NULL);
 		usleep(500);
